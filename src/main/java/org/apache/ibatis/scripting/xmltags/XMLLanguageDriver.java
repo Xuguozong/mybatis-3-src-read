@@ -47,6 +47,7 @@ public class XMLLanguageDriver implements LanguageDriver {
   @Override
   public SqlSource createSqlSource(Configuration configuration, String script, Class<?> parameterType) {
     // issue #3
+    // 如果是带script标签的内容，最终会调用XMLScriptBuilder.parseDynamicTags方法
     if (script.startsWith("<script>")) {
       XPathParser parser = new XPathParser(script, false, configuration.getVariables(), new XMLMapperEntityResolver());
       return createSqlSource(configuration, parser.evalNode("/script"), parameterType);
@@ -57,6 +58,7 @@ public class XMLLanguageDriver implements LanguageDriver {
       if (textSqlNode.isDynamic()) {
         return new DynamicSqlSource(configuration, textSqlNode);
       } else {
+        // 把#{}换成？，生成StaticSqlSource对象
         return new RawSqlSource(configuration, script, parameterType);
       }
     }

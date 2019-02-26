@@ -15,38 +15,21 @@
  */
 package org.apache.ibatis.builder.xml;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import org.apache.ibatis.builder.BaseBuilder;
-import org.apache.ibatis.builder.BuilderException;
-import org.apache.ibatis.builder.CacheRefResolver;
-import org.apache.ibatis.builder.IncompleteElementException;
-import org.apache.ibatis.builder.MapperBuilderAssistant;
-import org.apache.ibatis.builder.ResultMapResolver;
+import org.apache.ibatis.builder.*;
 import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.executor.ErrorContext;
 import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.mapping.Discriminator;
-import org.apache.ibatis.mapping.ParameterMapping;
-import org.apache.ibatis.mapping.ParameterMode;
-import org.apache.ibatis.mapping.ResultFlag;
-import org.apache.ibatis.mapping.ResultMap;
-import org.apache.ibatis.mapping.ResultMapping;
+import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.parsing.XNode;
 import org.apache.ibatis.parsing.XPathParser;
 import org.apache.ibatis.reflection.MetaClass;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.*;
 
 /**
  * @author Clinton Begin
@@ -111,11 +94,17 @@ public class XMLMapperBuilder extends BaseBuilder {
         throw new BuilderException("Mapper's namespace cannot be empty");
       }
       builderAssistant.setCurrentNamespace(namespace);
+      // 应用缓存
       cacheRefElement(context.evalNode("cache-ref"));
+      // 是否开启二级缓存
       cacheElement(context.evalNode("cache"));
+      // 参数
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      // 返回值
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      // 解析sql节点
       sqlElement(context.evalNodes("/mapper/sql"));
+      // SQL 语句解析
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
@@ -199,13 +188,22 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void cacheElement(XNode context) throws Exception {
     if (context != null) {
+      // 获取缓存的实例类型，在configuration初始化的时候注册
+      // typeAliasRegistry.registerAlias("PERPETUAL", PerpetualCache.class);
+      // typeAliasRegistry.registerAlias("FIFO", FifoCache.class);
+      // typeAliasRegistry.registerAlias("LRU", LruCache.class);
       String type = context.getStringAttribute("type", "PERPETUAL");
       Class<? extends Cache> typeClass = typeAliasRegistry.resolveAlias(type);
+      // LRU 回收算法
       String eviction = context.getStringAttribute("eviction", "LRU");
       Class<? extends Cache> evictionClass = typeAliasRegistry.resolveAlias(eviction);
+      // 刷新间隔
       Long flushInterval = context.getLongAttribute("flushInterval");
+      // 大小
       Integer size = context.getIntAttribute("size");
+      // 是否只读
       boolean readWrite = !context.getBooleanAttribute("readOnly", false);
+      // 是否阻塞
       boolean blocking = context.getBooleanAttribute("blocking", false);
       Properties props = context.getChildrenAsProperties();
       builderAssistant.useNewCache(typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);

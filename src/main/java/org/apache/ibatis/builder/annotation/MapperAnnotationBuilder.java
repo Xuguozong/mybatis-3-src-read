@@ -15,50 +15,9 @@
  */
 package org.apache.ibatis.builder.annotation;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
-
-import org.apache.ibatis.annotations.Arg;
-import org.apache.ibatis.annotations.CacheNamespace;
-import org.apache.ibatis.annotations.CacheNamespaceRef;
-import org.apache.ibatis.annotations.Case;
-import org.apache.ibatis.annotations.ConstructorArgs;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.DeleteProvider;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.InsertProvider;
-import org.apache.ibatis.annotations.Lang;
-import org.apache.ibatis.annotations.MapKey;
-import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.annotations.Options.FlushCachePolicy;
-import org.apache.ibatis.annotations.Property;
-import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.ResultMap;
-import org.apache.ibatis.annotations.ResultType;
-import org.apache.ibatis.annotations.Results;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.SelectKey;
-import org.apache.ibatis.annotations.SelectProvider;
-import org.apache.ibatis.annotations.TypeDiscriminator;
-import org.apache.ibatis.annotations.Update;
-import org.apache.ibatis.annotations.UpdateProvider;
 import org.apache.ibatis.binding.BindingException;
 import org.apache.ibatis.binding.MapperMethod.ParamMap;
 import org.apache.ibatis.builder.BuilderException;
@@ -71,15 +30,7 @@ import org.apache.ibatis.executor.keygen.KeyGenerator;
 import org.apache.ibatis.executor.keygen.NoKeyGenerator;
 import org.apache.ibatis.executor.keygen.SelectKeyGenerator;
 import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.mapping.Discriminator;
-import org.apache.ibatis.mapping.FetchType;
-import org.apache.ibatis.mapping.MappedStatement;
-import org.apache.ibatis.mapping.ResultFlag;
-import org.apache.ibatis.mapping.ResultMapping;
-import org.apache.ibatis.mapping.ResultSetType;
-import org.apache.ibatis.mapping.SqlCommandType;
-import org.apache.ibatis.mapping.SqlSource;
-import org.apache.ibatis.mapping.StatementType;
+import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.parsing.PropertyParser;
 import org.apache.ibatis.reflection.TypeParameterResolver;
 import org.apache.ibatis.scripting.LanguageDriver;
@@ -89,6 +40,12 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.UnknownTypeHandler;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.*;
+import java.util.*;
 
 /**
  * @author Clinton Begin
@@ -291,9 +248,15 @@ public class MapperAnnotationBuilder {
     return null;
   }
 
+  /**
+   * 生成MappedStatement对象，注册到configuration中
+   * @param method
+   */
   void parseStatement(Method method) {
     Class<?> parameterTypeClass = getParameterType(method);
     LanguageDriver languageDriver = getLanguageDriver(method);
+    // 判断方法上是否有那几种注解
+    // 如果有，就根据注解的内容创建SqlSource对象。创建过程和XML创建过程一致
     SqlSource sqlSource = getSqlSourceFromAnnotations(method, parameterTypeClass, languageDriver);
     if (sqlSource != null) {
       Options options = method.getAnnotation(Options.class);
@@ -356,6 +319,7 @@ public class MapperAnnotationBuilder {
         resultMapId = parseResultMap(method);
       }
 
+      // 创建MappedStatement对象，注册到configuration
       assistant.addMappedStatement(
           mappedStatementId,
           sqlSource,
@@ -466,11 +430,21 @@ public class MapperAnnotationBuilder {
     return returnType;
   }
 
+  /**
+   * 拿到注解和注解上的值，创建SqlSource对象
+   * @param method
+   * @param parameterType
+   * @param languageDriver
+   * @return
+   */
   private SqlSource getSqlSourceFromAnnotations(Method method, Class<?> parameterType, LanguageDriver languageDriver) {
     try {
+      // 注解就分两大类，sqlAnotation和sqlProviderAnnotation
+      // 循环注解列表，判断Method包含哪一种，就返回哪种类型注解的实例
       Class<? extends Annotation> sqlAnnotationType = getSqlAnnotationType(method);
       Class<? extends Annotation> sqlProviderAnnotationType = getSqlProviderAnnotationType(method);
       if (sqlAnnotationType != null) {
+        // 不能两种注解类型都设置
         if (sqlProviderAnnotationType != null) {
           throw new BindingException("You cannot supply both a static SQL and SqlProvider to method named " + method.getName());
         }

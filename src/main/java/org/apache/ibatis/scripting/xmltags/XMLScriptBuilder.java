@@ -15,11 +15,6 @@
  */
 package org.apache.ibatis.scripting.xmltags;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.ibatis.builder.BaseBuilder;
 import org.apache.ibatis.builder.BuilderException;
 import org.apache.ibatis.mapping.SqlSource;
@@ -28,6 +23,11 @@ import org.apache.ibatis.scripting.defaults.RawSqlSource;
 import org.apache.ibatis.session.Configuration;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Clinton Begin
@@ -50,7 +50,10 @@ public class XMLScriptBuilder extends BaseBuilder {
     initNodeHandlerMap();
   }
 
-
+  /**
+   * 初始化动态SQL标签对应的处理器
+   * 沉默的你，阳光萧瑟的树林
+   */
   private void initNodeHandlerMap() {
     nodeHandlerMap.put("trim", new TrimHandler());
     nodeHandlerMap.put("where", new WhereHandler());
@@ -74,13 +77,21 @@ public class XMLScriptBuilder extends BaseBuilder {
     return sqlSource;
   }
 
+  /**
+   * 解析动态SQL
+   * 会递归调用直至为静态SQL
+   * @param node
+   * @return
+   */
   protected MixedSqlNode parseDynamicTags(XNode node) {
     List<SqlNode> contents = new ArrayList<>();
     NodeList children = node.getNode().getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
       XNode child = node.newXNode(children.item(i));
       if (child.getNode().getNodeType() == Node.CDATA_SECTION_NODE || child.getNode().getNodeType() == Node.TEXT_NODE) {
+        // SQL 内容
         String data = child.getStringBody("");
+        // 生成TextSqlNode并判断是否是动态SQL
         TextSqlNode textSqlNode = new TextSqlNode(data);
         if (textSqlNode.isDynamic()) {
           contents.add(textSqlNode);
