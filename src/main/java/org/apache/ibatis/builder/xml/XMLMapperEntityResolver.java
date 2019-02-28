@@ -26,7 +26,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Offline entity resolver for the MyBatis DTDs
- * 
+ * 用于加载本地的 mybatis-3-config.dtd 和 mybatis-3-mapper.dtd 这两个文件
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
