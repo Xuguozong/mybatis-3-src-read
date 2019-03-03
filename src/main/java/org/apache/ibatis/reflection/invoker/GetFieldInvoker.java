@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import org.apache.ibatis.reflection.Reflector;
 
 /**
+ * 实现 Invoker 接口，获得 Field 调用者
  * @author Clinton Begin
  */
 public class GetFieldInvoker implements Invoker {
@@ -30,6 +31,14 @@ public class GetFieldInvoker implements Invoker {
     this.field = field;
   }
 
+  /**
+   * 获取属性
+   * @param target 目标
+   * @param args 参数
+   * @return
+   * @throws IllegalAccessException
+   * @throws InvocationTargetException
+   */
   @Override
   public Object invoke(Object target, Object[] args) throws IllegalAccessException, InvocationTargetException {
     try {
@@ -44,6 +53,10 @@ public class GetFieldInvoker implements Invoker {
     }
   }
 
+  /**
+   * 返回属性类型
+   * @return
+   */
   @Override
   public Class<?> getType() {
     return field.getType();

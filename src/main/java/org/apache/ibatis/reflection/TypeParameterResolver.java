@@ -15,6 +15,10 @@
  */
 package org.apache.ibatis.reflection;
 
+import sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
+import sun.reflect.generics.reflectiveObjects.WildcardTypeImpl;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
@@ -27,20 +31,28 @@ import java.util.Arrays;
 
 /**
  * @author Iwao AVE!
+ * {@link Type} 参数解析器
+ * 当存在复杂的继承关系以及泛型定义时，TypeParameterResolver 可以帮助我们
+ * 解析字段/方法参数或方法返回值的类型
  */
 public class TypeParameterResolver {
 
   /**
    * @return The field type as {@link Type}. If it has type parameters in the declaration,<br>
    *         they will be resolved to the actual runtime {@link Type}s.
+   * 解析属性类型
    */
   public static Type resolveFieldType(Field field, Type srcType) {
+    // 属性类型
     Type fieldType = field.getGenericType();
+    // 定义的类
     Class<?> declaringClass = field.getDeclaringClass();
+    // 解析类型
     return resolveType(fieldType, srcType, declaringClass);
   }
 
   /**
+   * 解析方法返回类型
    * @return The return type of the method as {@link Type}. If it has type parameters in the declaration,<br>
    *         they will be resolved to the actual runtime {@link Type}s.
    */
@@ -51,10 +63,12 @@ public class TypeParameterResolver {
   }
 
   /**
+   * 解析方法参数的类型数组
    * @return The parameter types of the method as an array of {@link Type}s. If they have type parameters in the declaration,<br>
    *         they will be resolved to the actual runtime {@link Type}s.
    */
   public static Type[] resolveParamTypes(Method method, Type srcType) {
+    // 获取方法参数类型数组
     Type[] paramTypes = method.getGenericParameterTypes();
     Class<?> declaringClass = method.getDeclaringClass();
     Type[] result = new Type[paramTypes.length];
@@ -64,6 +78,13 @@ public class TypeParameterResolver {
     return result;
   }
 
+  /**
+   * 解析类型
+   * @param type
+   * @param srcType 来源类型
+   * @param declaringClass 定义的类
+   * @return
+   */
   private static Type resolveType(Type type, Type srcType, Class<?> declaringClass) {
     if (type instanceof TypeVariable) {
       return resolveTypeVar((TypeVariable<?>) type, srcType, declaringClass);
@@ -76,6 +97,13 @@ public class TypeParameterResolver {
     }
   }
 
+  /**
+   * 解析泛型数组类型
+   * @param genericArrayType
+   * @param srcType
+   * @param declaringClass
+   * @return
+   */
   private static Type resolveGenericArrayType(GenericArrayType genericArrayType, Type srcType, Class<?> declaringClass) {
     Type componentType = genericArrayType.getGenericComponentType();
     Type resolvedComponentType = null;
@@ -93,8 +121,16 @@ public class TypeParameterResolver {
     }
   }
 
+  /**
+   * 解析泛型类型
+   * @param parameterizedType
+   * @param srcType
+   * @param declaringClass
+   * @return
+   */
   private static ParameterizedType resolveParameterizedType(ParameterizedType parameterizedType, Type srcType, Class<?> declaringClass) {
     Class<?> rawType = (Class<?>) parameterizedType.getRawType();
+    // 解析<> 中的实际类型
     Type[] typeArgs = parameterizedType.getActualTypeArguments();
     Type[] args = new Type[typeArgs.length];
     for (int i = 0; i < typeArgs.length; i++) {
@@ -111,13 +147,31 @@ public class TypeParameterResolver {
     return new ParameterizedTypeImpl(rawType, null, args);
   }
 
+  /**
+   * 解析 WildcardType 类型
+   * @param wildcardType
+   * @param srcType
+   * @param declaringClass
+   * @return
+   */
   private static Type resolveWildcardType(WildcardType wildcardType, Type srcType, Class<?> declaringClass) {
+    // 下界
     Type[] lowerBounds = resolveWildcardTypeBounds(wildcardType.getLowerBounds(), srcType, declaringClass);
+    // 上界
     Type[] upperBounds = resolveWildcardTypeBounds(wildcardType.getUpperBounds(), srcType, declaringClass);
     return new WildcardTypeImpl(lowerBounds, upperBounds);
   }
 
+  /**
+   *
+   * 解析泛型表达式边界（下限 super，上限 extends）
+   * @param bounds
+   * @param srcType
+   * @param declaringClass
+   * @return
+   */
   private static Type[] resolveWildcardTypeBounds(Type[] bounds, Type srcType, Class<?> declaringClass) {
+    //
     Type[] result = new Type[bounds.length];
     for (int i = 0; i < bounds.length; i++) {
       if (bounds[i] instanceof TypeVariable) {
@@ -218,12 +272,27 @@ public class TypeParameterResolver {
     super();
   }
 
+  /**
+   * 参数化类型，即泛型
+   */
   static class ParameterizedTypeImpl implements ParameterizedType {
+    // 以List<T> 举例
+
+    /**
+     * <> 前面实际类型
+     * 例如：List
+     */
     private Class<?> rawType;
-
+    /**
+     * 如果这个类型是某个属性所有，则获取这个所有者类型；否则返回null
+     */
     private Type ownerType;
-
+    /**
+     * <> 中实际类型
+     * 例如： T
+     */
     private Type[] actualTypeArguments;
+
 
     public ParameterizedTypeImpl(Class<?> rawType, Type ownerType, Type[] actualTypeArguments) {
       super();
@@ -253,9 +322,20 @@ public class TypeParameterResolver {
     }
   }
 
+  /**
+   * WildCard 实现类
+   * 泛型表达式（或者通配符表达式），即 ？ extends Number / ? super Integer 这样的表达式
+   * WildcardType 虽然是 Type 的子接口，但不是 Java 类型中的一种
+   */
   static class WildcardTypeImpl implements WildcardType {
+    /**
+     * 泛型表达式下界（下限 super）
+     */
     private Type[] lowerBounds;
 
+    /**
+     * 泛型表达式上界（上界 extends）
+     */
     private Type[] upperBounds;
 
     WildcardTypeImpl(Type[] lowerBounds, Type[] upperBounds) {
@@ -275,6 +355,9 @@ public class TypeParameterResolver {
     }
   }
 
+  /**
+   * 泛型数组类型，用来描述 ParameterizedType/TypeVariable 类型的数组，即 List<T>[] 、T[]等
+   */
   static class GenericArrayTypeImpl implements GenericArrayType {
     private Type genericComponentType;
 
