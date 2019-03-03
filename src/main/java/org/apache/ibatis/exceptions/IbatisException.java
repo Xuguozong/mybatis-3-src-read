@@ -16,6 +16,7 @@
 package org.apache.ibatis.exceptions;
 
 /**
+ * IBatis 的异常基类，2015年废弃。取代它的是 {@link PersistenceException}
  * @author Clinton Begin
  */
 @Deprecated
