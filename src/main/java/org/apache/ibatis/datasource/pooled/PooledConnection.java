@@ -24,21 +24,44 @@ import java.sql.SQLException;
 import org.apache.ibatis.reflection.ExceptionUtil;
 
 /**
+ * 实现 InvocationHandler 接口，池化的 Connection 对象
  * @author Clinton Begin
  */
 class PooledConnection implements InvocationHandler {
-
+  /**
+   * 关闭连接的方法名
+   */
   private static final String CLOSE = "close";
+  /**
+   * JDK Proxy 的接口
+   */
   private static final Class<?>[] IFACES = new Class<?>[] { Connection.class };
-
+  /**
+   * 对象的标识，基于 {@link #realConnection} 求 hashCode
+   */
   private final int hashCode;
   private final PooledDataSource dataSource;
   private final Connection realConnection;
   private final Connection proxyConnection;
+  /**
+   * 从连接池中获取走的时间戳
+   */
   private long checkoutTimestamp;
+  /**
+   * 创建时间
+   */
   private long createdTimestamp;
+  /**
+   * 更新时间
+   */
   private long lastUsedTimestamp;
+  /**
+   * 连接标识， 即 {@link PooledDataSource#expectedConnectionTypeCode}
+   */
   private int connectionTypeCode;
+  /**
+   * 是否有效
+   */
   private boolean valid;
 
   /**
@@ -54,6 +77,7 @@ class PooledConnection implements InvocationHandler {
     this.createdTimestamp = System.currentTimeMillis();
     this.lastUsedTimestamp = System.currentTimeMillis();
     this.valid = true;
+    // 创建代理的 Connection 对象
     this.proxyConnection = (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(), IFACES, this);
   }
 
@@ -232,16 +256,19 @@ class PooledConnection implements InvocationHandler {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     String methodName = method.getName();
+    // 若为 close 方法将连接放回到连接池中
     if (CLOSE.hashCode() == methodName.hashCode() && CLOSE.equals(methodName)) {
       dataSource.pushConnection(this);
       return null;
     } else {
       try {
+        // 判断非 Object 方法，则先检查连接是否可用
         if (!Object.class.equals(method.getDeclaringClass())) {
           // issue #579 toString() should never fail
           // throw an SQLException instead of a Runtime
           checkConnection();
         }
+        // 反射调用对应的方法
         return method.invoke(realConnection, args);
       } catch (Throwable t) {
         throw ExceptionUtil.unwrapThrowable(t);
