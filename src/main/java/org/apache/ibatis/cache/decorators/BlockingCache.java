@@ -33,11 +33,21 @@ import org.apache.ibatis.cache.CacheException;
  * 
  * @author Eduardo Macarron
  *
+ * 阻塞的 Cache 实现类
+ * 当线程去获取缓存值时，如果不存在（会去先设置对应的缓存值），则会阻塞后续的其他线程去获取该缓存。
  */
 public class BlockingCache implements Cache {
-
+  /**
+   * 阻塞等待超时时间
+   */
   private long timeout;
+  /**
+   * 装饰的 Cache 对象
+   */
   private final Cache delegate;
+  /**
+   * 缓存键与 ReentrantLock 对象的映射
+   */
   private final ConcurrentHashMap<Object, ReentrantLock> locks;
 
   public BlockingCache(Cache delegate) {
@@ -70,7 +80,9 @@ public class BlockingCache implements Cache {
     Object value = delegate.getObject(key);
     if (value != null) {
       releaseLock(key);
-    }        
+    }
+    // 如果没有对应的缓存值，其他线程获取会阻塞
+    // 需要在 putObject 方法中释放锁
     return value;
   }
 
@@ -90,7 +102,12 @@ public class BlockingCache implements Cache {
   public ReadWriteLock getReadWriteLock() {
     return null;
   }
-  
+
+  /**
+   * 获取锁，如果不存在就添加
+   * @param key
+   * @return
+   */
   private ReentrantLock getLockForKey(Object key) {
     ReentrantLock lock = new ReentrantLock();
     ReentrantLock previous = locks.putIfAbsent(key, lock);
@@ -99,6 +116,7 @@ public class BlockingCache implements Cache {
   
   private void acquireLock(Object key) {
     Lock lock = getLockForKey(key);
+    // 获得锁，直到超时
     if (timeout > 0) {
       try {
         boolean acquired = lock.tryLock(timeout, TimeUnit.MILLISECONDS);

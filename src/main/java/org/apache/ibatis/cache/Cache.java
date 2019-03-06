@@ -81,7 +81,7 @@ public interface Cache {
 
   /**
    * Optional. This method is not called by the core.
-   * 
+   *  获取缓存数量
    * @return The number of elements stored in the cache (not its capacity).
    */
   int getSize();

@@ -15,6 +15,7 @@
  */
 package org.apache.ibatis.cache;
 
+import java.io.Closeable;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,22 +23,40 @@ import java.util.List;
 import org.apache.ibatis.reflection.ArrayUtil;
 
 /**
+ * 缓存键
+ * 将多个对象放在一起计算其缓存键
  * @author Clinton Begin
  */
 public class CacheKey implements Cloneable, Serializable {
 
   private static final long serialVersionUID = 1146682552656046210L;
-
+  /**
+   * 单例 - 空缓存键182
+   */
   public static final CacheKey NULL_CACHE_KEY = new NullCacheKey();
 
   private static final int DEFAULT_MULTIPLYER = 37;
   private static final int DEFAULT_HASHCODE = 17;
-
+  /**
+   * hashcode 求值的系数
+   */
   private final int multiplier;
+  /**
+   * 缓存键的 hashcode
+   */
   private int hashcode;
+  /**
+   * 校验和
+   */
   private long checksum;
+  /**
+   * {@link #update(Object)} 的次数
+   */
   private int count;
   // 8/21/2017 - Sonarlint flags this as needing to be marked transient.  While true if content is not serializable, this is not always true and thus should not be marked transient.
+  /**
+   * 计算 {@link #hashcode} 的对象的集合
+   */
   private List<Object> updateList;
 
   public CacheKey() {

@@ -20,12 +20,21 @@ import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.ibatis.cache.Cache;
 
 /**
+ * 定时清空整个容器的 Cache 实现类
  * @author Clinton Begin
  */
 public class ScheduledCache implements Cache {
-
+  /**
+   * 被装饰的 Cache 对象
+   */
   private final Cache delegate;
+  /**
+   * 清空间隔（ms）
+   */
   protected long clearInterval;
+  /**
+   * 最后清空时间（ms）
+   */
   protected long lastClear;
 
   public ScheduledCache(Cache delegate) {
@@ -87,6 +96,10 @@ public class ScheduledCache implements Cache {
     return delegate.equals(obj);
   }
 
+  /**
+   * 判断是否要全部清空
+   * @return
+   */
   private boolean clearWhenStale() {
     if (System.currentTimeMillis() - lastClear > clearInterval) {
       clear();

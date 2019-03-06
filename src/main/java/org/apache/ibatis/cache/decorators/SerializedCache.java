@@ -30,6 +30,7 @@ import org.apache.ibatis.cache.CacheException;
 import org.apache.ibatis.io.Resources;
 
 /**
+ * 支持序列化的 Cache 实现类
  * @author Clinton Begin
  */
 public class SerializedCache implements Cache {
