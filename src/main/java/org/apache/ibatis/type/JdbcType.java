@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * JDBC Type 枚举
  * @author Clinton Begin
  */
 public enum JdbcType {
@@ -66,11 +67,17 @@ public enum JdbcType {
   LONGNVARCHAR(Types.LONGNVARCHAR), // JDK6
   SQLXML(Types.SQLXML), // JDK6
   DATETIMEOFFSET(-155); // SQL Server 2008
-
+  /**
+   * 类型编号
+   */
   public final int TYPE_CODE;
+  /**
+   * 代码编号和 {@link JdbcType} 的映射
+   */
   private static Map<Integer,JdbcType> codeLookup = new HashMap<>();
 
   static {
+    // 初始化 codeLookup
     for (JdbcType type : JdbcType.values()) {
       codeLookup.put(type.TYPE_CODE, type);
     }

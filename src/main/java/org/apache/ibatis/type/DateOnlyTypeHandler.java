@@ -29,6 +29,7 @@ public class DateOnlyTypeHandler extends BaseTypeHandler<Date> {
   @Override
   public void setNonNullParameter(PreparedStatement ps, int i, Date parameter, JdbcType jdbcType)
       throws SQLException {
+    // 将 Java Date 转成 sql Date 类型
     ps.setDate(i, new java.sql.Date(parameter.getTime()));
   }
 
