@@ -36,14 +36,21 @@ import java.lang.reflect.Type;
 import java.util.*;
 
 /**
+ * Mapper 方法
+ * 在 Mapper 接口中，每个定义的方法，对应一个 MapperMethod 对象
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
  * @author Kazuki Shimizu
  */
 public class MapperMethod {
-
+  /**
+   * SqlCommand 对象
+   */
   private final SqlCommand command;
+  /**
+   * MethodSignature
+   */
   private final MethodSignature method;
 
   public MapperMethod(Class<?> mapperInterface, Method method, Configuration config) {
@@ -216,6 +223,9 @@ public class MapperMethod {
   public static class SqlCommand {
 
     private final String name;
+    /**
+     * SQL 命令类型
+     */
     private final SqlCommandType type;
 
     public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
@@ -224,6 +234,7 @@ public class MapperMethod {
       MappedStatement ms = resolveMappedStatement(mapperInterface, methodName, declaringClass,
           configuration);
       if (ms == null) {
+        // 如果有 Flush 注解，标记为该类型
         if(method.getAnnotation(Flush.class) != null){
           name = null;
           type = SqlCommandType.FLUSH;
@@ -250,12 +261,15 @@ public class MapperMethod {
 
     private MappedStatement resolveMappedStatement(Class<?> mapperInterface, String methodName,
         Class<?> declaringClass, Configuration configuration) {
+      // Configuration 里缓存了所有的 MappedStatement
+      // 并且每一个XML里声明的例如<insert/>等都对应一个 MappedStatement 对象
       String statementId = mapperInterface.getName() + "." + methodName;
       if (configuration.hasStatement(statementId)) {
         return configuration.getMappedStatement(statementId);
       } else if (mapperInterface.equals(declaringClass)) {
         return null;
       }
+      // 遍历父接口继续找
       for (Class<?> superInterface : mapperInterface.getInterfaces()) {
         if (declaringClass.isAssignableFrom(superInterface)) {
           MappedStatement ms = resolveMappedStatement(superInterface, methodName,
@@ -270,19 +284,40 @@ public class MapperMethod {
   }
 
   public static class MethodSignature {
-
+    /**
+     * 返回类型是否是集合
+     */
     private final boolean returnsMany;
+    /**
+     * 返回类型是否是 map
+     */
     private final boolean returnsMap;
+    /**
+     * 返回类型是否是 void
+     */
     private final boolean returnsVoid;
     private final boolean returnsCursor;
     private final boolean returnsOptional;
     private final Class<?> returnType;
+    /**
+     * 返回方法上的 {@link MapKey#value()}，前提是反水类型是 Map
+     */
     private final String mapKey;
+    /**
+     * 获得 {@link ResultHandler} 在方法参数中的位置
+     */
     private final Integer resultHandlerIndex;
+    /**
+     * 获得 {@link RowBounds} 在方法参数中的位置
+     */
     private final Integer rowBoundsIndex;
+    /**
+     * ParamNameResolver 对象
+     */
     private final ParamNameResolver paramNameResolver;
 
     public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
+      // 初始化 returnType 参数
       Type resolvedReturnType = TypeParameterResolver.resolveReturnType(method, mapperInterface);
       if (resolvedReturnType instanceof Class<?>) {
         this.returnType = (Class<?>) resolvedReturnType;
@@ -302,6 +337,11 @@ public class MapperMethod {
       this.paramNameResolver = new ParamNameResolver(configuration, method);
     }
 
+    /**
+     * 获取 SQL 通用参数
+     * @param args
+     * @return
+     */
     public Object convertArgsToSqlCommandParam(Object[] args) {
       return paramNameResolver.getNamedParams(args);
     }
@@ -355,11 +395,18 @@ public class MapperMethod {
       return returnsOptional;
     }
 
+    /**
+     * 获取指定参数类型在方法参数中的位置
+     * @param method 方法
+     * @param paramType 参数类型
+     * @return
+     */
     private Integer getUniqueParamIndex(Method method, Class<?> paramType) {
       Integer index = null;
       final Class<?>[] argTypes = method.getParameterTypes();
       for (int i = 0; i < argTypes.length; i++) {
-        if (paramType.isAssignableFrom(argTypes[i])) {
+        if (paramType.isAssignableFrom(argTypes[i])) { // 符合类型
+          // 获得第一次的位置
           if (index == null) {
             index = i;
           } else {
@@ -372,9 +419,12 @@ public class MapperMethod {
 
     private String getMapKey(Method method) {
       String mapKey = null;
+      // 返回类型为 Map
       if (Map.class.isAssignableFrom(method.getReturnType())) {
+        // 使用 @MapKey 注解
         final MapKey mapKeyAnnotation = method.getAnnotation(MapKey.class);
         if (mapKeyAnnotation != null) {
+          // 获取 @MapKey 注解的键
           mapKey = mapKeyAnnotation.value();
         }
       }
