@@ -22,13 +22,22 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * 查询语句提供器
  * @author Clinton Begin
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface SelectProvider {
+  /**
+   * 提供自定义查询语句的类
+   * @return
+   */
   Class<?> type();
 
+  /**
+   * 提供的方法
+   * @return
+   */
   String method();
 }

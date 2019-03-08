@@ -24,21 +24,37 @@ import java.lang.annotation.Target;
 import org.apache.ibatis.mapping.StatementType;
 
 /**
+ * 通过 SQL 语句获得主键
  * @author Clinton Begin
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface SelectKey {
+  /**
+   * @return 语句
+   */
   String[] statement();
 
+  /**
+   * @return Java 对象属性
+   */
   String keyProperty();
-
+  /**
+   * @return 数据库字段
+   */
   String keyColumn() default "";
 
+  /**
+   * @return 在插入语句执行前还是执行后
+   */
   boolean before();
-
+  /**
+   * @return 返回类型
+   */
   Class<?> resultType();
-
+  /**
+   * @return {@link #statement()} 的类型
+   */
   StatementType statementType() default StatementType.PREPARED;
 }
