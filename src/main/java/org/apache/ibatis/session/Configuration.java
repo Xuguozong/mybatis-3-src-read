@@ -126,7 +126,9 @@ public class Configuration {
    * @see <a href='https://code.google.com/p/mybatis/issues/detail?id=300'>Issue 300 (google code)</a>
    */
   protected Class<?> configurationFactory;
-
+  /**
+   * mapper 注册器
+   */
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
   protected final InterceptorChain interceptorChain = new InterceptorChain();
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry();
@@ -134,11 +136,21 @@ public class Configuration {
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
 
   protected final Map<String, MappedStatement> mappedStatements = new StrictMap<>("Mapped Statements collection");
+  /**
+   * Cache 对象集合
+   * KEY:命名空间（namespace）
+   */
   protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
+  /**
+   * ResultMap 集合
+   * KEY:'${namespace}.${id}'
+   */
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
   protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
   protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");
-
+  /**
+   * 已加载资源（Resource）集合
+   */
   protected final Set<String> loadedResources = new HashSet<>();
   /**
    * 用于存放重用的sql标签
@@ -151,6 +163,7 @@ public class Configuration {
   protected final Collection<MethodResolver> incompleteMethods = new LinkedList<>();
 
   /*
+   * cache 指向的映射
    * A map holds cache-ref relationship. The key is the namespace that
    * references a cache bound to another namespace and the value is the
    * namespace which the actual cache is bound to.

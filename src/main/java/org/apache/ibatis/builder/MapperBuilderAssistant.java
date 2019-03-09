@@ -50,13 +50,25 @@ import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 
 /**
+ * Mapper 构造器的助手类
  * @author Clinton Begin
  */
 public class MapperBuilderAssistant extends BaseBuilder {
-
+  /**
+   * 当前 Mapper 的命名空间
+   */
   private String currentNamespace;
+  /**
+   * 资源引用的地址
+   */
   private final String resource;
+  /**
+   * 当前 Cache 对象
+   */
   private Cache currentCache;
+  /**
+   * 是否未解析成功 Cache 引用
+   */
   private boolean unresolvedCacheRef; // issue #676
 
   public MapperBuilderAssistant(Configuration configuration, String resource) {
@@ -103,6 +115,11 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return currentNamespace + "." + base;
   }
 
+  /**
+   * 获取指向的 Cache 对象
+   * @param namespace
+   * @return
+   */
   public Cache useCacheRef(String namespace) {
     if (namespace == null) {
       throw new BuilderException("cache-ref element requires a namespace attribute.");
@@ -121,6 +138,17 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
   }
 
+  /**
+   * 创建 Cache 对象
+   * @param typeClass
+   * @param evictionClass
+   * @param flushInterval
+   * @param size
+   * @param readWrite
+   * @param blocking
+   * @param props
+   * @return
+   */
   public Cache useNewCache(Class<? extends Cache> typeClass,
       Class<? extends Cache> evictionClass,
       Long flushInterval,
