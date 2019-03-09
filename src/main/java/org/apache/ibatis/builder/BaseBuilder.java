@@ -29,9 +29,13 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 基础构造抽象类
  * @author Clinton Begin
  */
 public abstract class BaseBuilder {
+  /**
+   * XML 和注解中解析到的配置最终都会设置到 configuration 中
+   */
   protected final Configuration configuration;
   protected final TypeAliasRegistry typeAliasRegistry;
   protected final TypeHandlerRegistry typeHandlerRegistry;
@@ -46,10 +50,22 @@ public abstract class BaseBuilder {
     return configuration;
   }
 
+  /**
+   * 创建正则表达式
+   * @param regex 指定表达式
+   * @param defaultValue 默认表达式
+   * @return
+   */
   protected Pattern parseExpression(String regex, String defaultValue) {
     return Pattern.compile(regex == null ? defaultValue : regex);
   }
 
+  /**
+   * 将字符串转成对应的数据类型的值
+   * @param value 字符串值
+   * @param defaultValue 默认值
+   * @return
+   */
   protected Boolean booleanValueOf(String value, Boolean defaultValue) {
     return value == null ? defaultValue : Boolean.valueOf(value);
   }
@@ -96,6 +112,11 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 创建指定对象
+   * @param alias
+   * @return
+   */
   protected Object createInstance(String alias) {
     Class<?> clazz = resolveClass(alias);
     if (clazz == null) {
